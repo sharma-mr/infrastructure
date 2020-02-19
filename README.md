@@ -16,3 +16,4 @@ An example of create stack command:- <br />
 aws cloudformation create-stack   --stack-name csye6225  --parameters ParameterKey=VPCName,ParameterValue=VPCName    ParameterKey=myVPCCIDR,ParameterValue=10.0.0.0/16   ParameterKey=mySubnet1CIDR,ParameterValue=10.0.1.0/24   ParameterKey=mySubnet2CIDR,ParameterValue=10.0.2.0/24   ParameterKey=mySubnet3CIDR,ParameterValue=10.0.3.0/24   --template-body file://networking.json --region us-east-2 --profile dev<br />
 
 Delete stack command:- <br />
+aws cloudformation delete-stack --stack-name csye6225demo --region us-east-1 --profile dev<br />
