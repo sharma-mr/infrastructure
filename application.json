@@ -48,6 +48,34 @@
             "Description": "Internet Gateway Name."
         }
     },
+    "AMI": {
+      "Description": "AMI for EC2 instance",
+      "Type": "String"
+    },
+    "keyname": {
+      "Description": "Name of key for the EC2 instance",
+      "Type": "String"
+    },
+    "ec2InstanceType": {
+      "Description": "The instance type for EC2",
+      "Type": "String",
+      "Default" : "t2.micro"
+    },
+    "myEC2Name":{
+      "Description": "Name of EC2",
+      "Type": "String",
+      "Default" : "myEC2Server"
+    },
+    "dbSecurityGroup":{
+      "Description": "Name of database security group",
+      "Type": "String",
+      "Default" : "csye6225-database-securitygroup"
+    },
+    "appSecurityGroup":{
+      "Description": "Name of application security group",
+      "Type": "String",
+      "Default" : "csye6225-application-securitygroup"
+    },
     "Resources": {
         "VPC": {
             "Type": "AWS::EC2::VPC",
@@ -171,6 +199,74 @@
                     "Ref": "myInternetGateway"
                 }
             }
+        },,
+        "applicationSecurityGroup": {
+          "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "Security group for EC2 server",
+            "GroupName": "csye6225-securitygroup",
+            "SecurityGroupIngress": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": "22",
+                "ToPort": "22",
+                "CidrIp": "0.0.0.0/0"
+              },
+              {
+                "IpProtocol": "tcp",
+                "FromPort": "80",
+                "ToPort": "80",
+                "CidrIp": "0.0.0.0/0"
+              },
+              {
+                "IpProtocol": "tcp",
+                "FromPort": "443",
+                "ToPort": "443",
+                "CidrIp": "0.0.0.0/0"
+              },
+              {
+               "FromPort": "8080",
+               "IpProtocol": "tcp",
+               "ToPort": "8080",
+               "CidrIp": "0.0.0.0/0"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "Name",
+                "Value": {"Ref":"appSecurityGroup"}
+              }
+            ],
+            "VpcId": {
+              "Ref": "myVPC"
+            }
+          }
+        },
+        "databaseSecurityGroup": {
+          "Type" : "AWS::EC2::SecurityGroup",
+          "Properties" : {
+            "GroupDescription" : "SecurityGroup for RDS",
+            "GroupName" : "csye6225-database-securitygroup",
+            "SecurityGroupIngress": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": "3306",
+                "ToPort": "3306",
+                "SourceSecurityGroupId": {
+                  "Ref": "applicationSecurityGroup"
+                }
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "Name",
+                "Value": {"Ref": "dbSecurityGroup"}
+              }
+            ],
+            "VpcId": {
+              "Ref": "myVPC"
+            }
+          }
         },
         "myRouteTable": {
             "Type": "AWS::EC2::RouteTable",
