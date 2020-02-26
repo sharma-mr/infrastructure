@@ -76,6 +76,26 @@
       "Type": "String",
       "Default" : "csye6225-application-securitygroup"
     },
+    "dbName":{
+      "Description": "RDS Database Name",
+      "Type": "String",
+      "Default" : "csye6225"
+    },
+    "dbUserName":{
+      "Description": "RDS DB User Name",
+      "Type": "String",
+      "Default" : "dbuser"
+    },
+    "dbuserPassword":{
+      "Description": "RDS DB UserPassword",
+      "Type": "String",
+      "Default" : "dbuserPassword"
+    },
+    "dbIdentifier":{
+      "Description": "RDS Name Identifier",
+      "Type": "String",
+      "Default" : "csye6225-spring2020"
+    },
     "Resources": {
         "VPC": {
             "Type": "AWS::EC2::VPC",
@@ -199,7 +219,69 @@
                     "Ref": "myInternetGateway"
                 }
             }
-        },,
+        },
+        "myRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "RouteTable"
+                        }
+                    }
+                ]
+            }
+        },
+        "myRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "myAttachGateway",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "myRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "myInternetGateway"
+                }
+            }
+        },
+        "mySubnetRouteTableAssociation1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "mySubnet1"
+                },
+                "RouteTableId": {
+                    "Ref": "myRouteTable"
+                }
+            }
+        },
+        "mySubnetRouteTableAssociation2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "mySubnet2"
+                },
+                "RouteTableId": {
+                    "Ref": "myRouteTable"
+                }
+            }
+        },
+        "mySubnetRouteTableAssociation3": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "mySubnet3"
+                },
+                "RouteTableId": {
+                    "Ref": "myRouteTable"
+                }
+            }
+        },
         "applicationSecurityGroup": {
           "Type": "AWS::EC2::SecurityGroup",
           "Properties": {
@@ -268,67 +350,32 @@
             }
           }
         },
-        "myRouteTable": {
-            "Type": "AWS::EC2::RouteTable",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Ref": "RouteTable"
-                        }
-                    }
-                ]
+        "myS3Bucket": {
+        "Type" : "AWS::S3::Bucket",
+        "Properties" : {
+        "AccessControl" : "Private",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+              "SSEAlgorithm": "AES256"
+              }
             }
+          ]
         },
-        "myRoute": {
-            "Type": "AWS::EC2::Route",
-            "DependsOn": "myAttachGateway",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "myRouteTable"
-                },
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {
-                    "Ref": "myInternetGateway"
-                }
+        "LifecycleConfiguration" : {
+          "Rules": [
+            {
+              "Id": "ShiftIn30Days",
+              "Status": "Enabled",
+              "Transition": {
+                "TransitionInDays": "30",
+                "StorageClass" : "STANDARD_IA"
+              }
             }
-        },
-        "mySubnetRouteTableAssociation1": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "mySubnet1"
-                },
-                "RouteTableId": {
-                    "Ref": "myRouteTable"
-                }
-            }
-        },
-        "mySubnetRouteTableAssociation2": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "mySubnet2"
-                },
-                "RouteTableId": {
-                    "Ref": "myRouteTable"
-                }
-            }
-        },
-        "mySubnetRouteTableAssociation3": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "mySubnet3"
-                },
-                "RouteTableId": {
-                    "Ref": "myRouteTable"
-                }
-            }
+          ]
         }
+      }
+    }
     }
 }
