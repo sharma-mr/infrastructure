@@ -517,7 +517,7 @@
                 "#!/bin/bash \n",
                 "set -e -x \n",
                 "sudo service tomcat8 stop \n",
-                "sudo echo CURRENT_PROFILE=dev >> /etc/profile.d/envvariable.sh \n",
+                "sudo echo CURRENT_PROFILE=aws >> /etc/profile.d/envvariable.sh \n",
                 "sudo echo export CURRENT_PROFILE >> /etc/profile.d/envvariable.sh",
                 "sudo echo DBCreationType=update >> /etc/profile.d/envvariable.sh \n",
                 "sudo echo export DBCreationType >> /etc/profile.d/envvariable.sh \n",
