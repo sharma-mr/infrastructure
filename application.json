@@ -521,10 +521,10 @@
                 "sudo echo export CURRENT_PROFILE >> /etc/profile.d/envvariable.sh",
                 "sudo echo DBCreationType=update >> /etc/profile.d/envvariable.sh \n",
                 "sudo echo export DBCreationType >> /etc/profile.d/envvariable.sh \n",
-                { "Fn::Sub": "sudo echo username=${dbUserName} >> /etc/profile.d/envvariable.sh \n" },
-                "sudo echo export username >> /etc/profile.d/envvariable.sh \n",
-                { "Fn::Sub": "sudo echo password=${dbuserPassword} >> /etc/profile.d/envvariable.sh \n" },
-                "sudo echo export password >> /etc/profile.d/envvariable.sh \n",
+                { "Fn::Sub": "sudo echo DB_USER=${dbUserName} >> /etc/profile.d/envvariable.sh \n" },
+                "sudo echo export DB_USER >> /etc/profile.d/envvariable.sh \n",
+                { "Fn::Sub": "sudo echo DB_PASSWORD=${dbuserPassword} >> /etc/profile.d/envvariable.sh \n" },
+                "sudo echo export DB_PASSWORD >> /etc/profile.d/envvariable.sh \n",
                 {
                   "Fn::Join": [
                     "",
