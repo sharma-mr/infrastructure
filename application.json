@@ -1018,17 +1018,7 @@
                   "Key":"Name",
                   "Type":"KEY_AND_VALUE",
                   "Value":{
-                     "Fn::Join":[
-                        "-",
-                        [
-                           {
-                              "Ref":"myEC2Name"
-                           },
-                           {
-                              "Ref":"VPCName"
-                           }
-                        ]
-                     ]
+                     "Ref":"myEC2Name"
                   }
                }
             ],
