@@ -105,6 +105,14 @@
          "Default":"codedeploy.sharmamrinal.me",
          "Description":"Name of bucket for storing application",
          "Type":"String"
+      },
+      "DomainName":{
+         "Default":"prod.sharmamrinal.me",
+         "Type":"String"
+      },
+      "HostedZoneId":{
+         "Type":"String",
+         "Default":"Z242CKZZIP91Z1"
       }
    },
    "Resources":{
@@ -396,6 +404,42 @@
             }
          }
       },
+      "loadbalancerSecurityGroup":{
+         "Type":"AWS::EC2::SecurityGroup",
+         "Properties":{
+            "GroupName":"LoadBalancer-Security-Group",
+            "GroupDescription":"Security group for load balancer",
+            "VpcId":{
+               "Ref":"myVPC"
+            },
+            "SecurityGroupIngress":[
+               {
+                  "IpProtocol":"tcp",
+                  "FromPort":80,
+                  "ToPort":80,
+                  "CidrIp":"0.0.0.0/0"
+               },
+               {
+                  "IpProtocol":"tcp",
+                  "FromPort":443,
+                  "ToPort":443,
+                  "CidrIp":"0.0.0.0/0"
+               },
+               {
+                  "IpProtocol":"tcp",
+                  "FromPort":8080,
+                  "ToPort":8080,
+                  "CidrIp":"0.0.0.0/0"
+               },
+               {
+                  "IpProtocol":"tcp",
+                  "FromPort":22,
+                  "ToPort":22,
+                  "CidrIp":"0.0.0.0/0"
+               }
+            ]
+         }
+      },
       "applicationSecurityGroup":{
          "Type":"AWS::EC2::SecurityGroup",
          "Properties":{
@@ -404,27 +448,20 @@
             "SecurityGroupIngress":[
                {
                   "IpProtocol":"tcp",
-                  "FromPort":"22",
-                  "ToPort":"22",
+                  "FromPort":22,
+                  "ToPort":22,
                   "CidrIp":"0.0.0.0/0"
                },
                {
                   "IpProtocol":"tcp",
-                  "FromPort":"80",
-                  "ToPort":"80",
-                  "CidrIp":"0.0.0.0/0"
-               },
-               {
-                  "IpProtocol":"tcp",
-                  "FromPort":"443",
-                  "ToPort":"443",
-                  "CidrIp":"0.0.0.0/0"
-               },
-               {
-                  "FromPort":"8080",
-                  "IpProtocol":"tcp",
-                  "ToPort":"8080",
-                  "CidrIp":"0.0.0.0/0"
+                  "FromPort":8080,
+                  "ToPort":8080,
+                  "SourceSecurityGroupId":{
+                     "Fn::GetAtt":[
+                        "loadbalancerSecurityGroup",
+                        "GroupId"
+                     ]
+                  }
                }
             ],
             "Tags":[
@@ -866,43 +903,113 @@
             "AllocatedStorage":"10"
          }
       },
-      "myEC2":{
-         "Type":"AWS::EC2::Instance",
+      "myEC2InstanceProfile":{
          "Properties":{
-            "ImageId":{
-               "Ref":"AMI"
-            },
-            "InstanceType":{
-               "Ref":"ec2InstanceType"
-            },
-            "BlockDeviceMappings":[
+            "Path":"/",
+            "Roles":[
                {
-                  "DeviceName":"/dev/sda1",
-                  "Ebs":{
-                     "VolumeSize":"20",
-                     "VolumeType":"gp2",
-                     "DeleteOnTermination":true
-                  }
+                  "Ref":"CodeDeployEC2ServiceRole"
+               }
+            ]
+         },
+         "Type":"AWS::IAM::InstanceProfile"
+      },
+      "WebappApplication":{
+         "Properties":{
+            "ApplicationName":{
+               "Ref":"myAppName"
+            },
+            "ComputePlatform":"Server"
+         },
+         "Type":"AWS::CodeDeploy::Application"
+      },
+      "WebappDeploymentGroup":{
+         "Type":"AWS::CodeDeploy::DeploymentGroup",
+         "DependsOn":"CodeDeployServiceRole",
+         "Properties":{
+            "ApplicationName":{
+               "Ref":"WebappApplication"
+            },
+            "DeploymentGroupName":{
+               "Ref":"myDeployGroupName"
+            },
+            "AutoScalingGroups":[
+               {
+                  "Ref":"WebServerGroup"
                }
             ],
-            "KeyName":{
-               "Ref":"keyname"
-            },
-            "NetworkInterfaces":[
-               {
-                  "AssociatePublicIpAddress":true,
-                  "DeviceIndex":"0",
-                  "DeleteOnTermination":true,
-                  "SubnetId":{
-                     "Ref":"myPublicSubnet3"
-                  },
-                  "GroupSet":[
-                     {
-                        "Ref":"applicationSecurityGroup"
+            "LoadBalancerInfo":{
+               "TargetGroupInfoList":[
+                  {
+                     "Name":{
+                        "Fn::GetAtt":[
+                           "TargetGroup",
+                           "TargetGroupName"
+                        ]
                      }
-                  ]
+                  }
+               ]
+            },
+            "DeploymentStyle":{
+               "DeploymentType":"IN_PLACE",
+               "DeploymentOption":"WITH_TRAFFIC_CONTROL"
+            },
+            "DeploymentConfigName":"CodeDeployDefault.OneAtATime",
+            "Ec2TagFilters":[
+               {
+                  "Key":"Name",
+                  "Value":"myEC2Server",
+                  "Type":"KEY_AND_VALUE"
                }
             ],
+            "AutoRollbackConfiguration":{
+               "Enabled":"true",
+               "Events":[
+                  "DEPLOYMENT_FAILURE"
+               ]
+            },
+            "ServiceRoleArn":{
+               "Fn::GetAtt":[
+                  "CodeDeployServiceRole",
+                  "Arn"
+               ]
+            }
+         }
+      },
+      "myLoadBalancer":{
+         "Type":"AWS::ElasticLoadBalancingV2::LoadBalancer",
+         "Properties":{
+            "IpAddressType":"ipv4",
+            "SecurityGroups":[
+               {
+                  "Ref":"applicationSecurityGroup"
+               }
+            ],
+            "Subnets":[
+               {
+                  "Ref":"myPublicSubnet1"
+               },
+               {
+                  "Ref":"myPublicSubnet2"
+               },
+               {
+                  "Ref":"myPublicSubnet3"
+               }
+            ],
+            "Name":"myLoadBalancer",
+            "Scheme":"internet-facing",
+            "Tags":[
+               {
+                  "Key":"Name",
+                  "Value":"Loadbalancer"
+               }
+            ],
+            "Type":"application"
+         }
+      },
+      "LaunchConfiguration":{
+         "Type":"AWS::AutoScaling::LaunchConfiguration",
+         "Properties":{
             "UserData":{
                "Fn::Base64":{
                   "Fn::Join":[
@@ -973,76 +1080,209 @@
                   ]
                }
             },
+            "ImageId":{
+               "Ref":"AMI"
+            },
+            "KeyName":{
+               "Ref":"keyname"
+            },
+            "SecurityGroups":[
+               {
+                  "Ref":"applicationSecurityGroup"
+               }
+            ],
+            "LaunchConfigurationName":"LaunchConfiguration",
+            "InstanceType":"t2.micro",
+            "AssociatePublicIpAddress":true,
+            "BlockDeviceMappings":[
+               {
+                  "DeviceName":"/dev/sdm",
+                  "Ebs":{
+                     "VolumeType":"gp2",
+                     "DeleteOnTermination":"true",
+                     "VolumeSize":"20"
+                  }
+               }
+            ],
             "IamInstanceProfile":{
                "Ref":"myEC2InstanceProfile"
+            }
+         }
+      },
+      "TargetGroup":{
+         "Type":"AWS::ElasticLoadBalancingV2::TargetGroup",
+         "Properties":{
+            "HealthCheckIntervalSeconds":30,
+            "HealthCheckPath":"/",
+            "HealthCheckPort":"8080",
+            "HealthCheckProtocol":"HTTP",
+            "HealthCheckTimeoutSeconds":7,
+            "HealthyThresholdCount":3,
+            "Name":"TargetGroup",
+            "Port":8080,
+            "Protocol":"HTTP",
+            "TargetType":"instance",
+            "UnhealthyThresholdCount":5,
+            "VpcId":{
+               "Ref":"myVPC"
             },
+            "Matcher":{
+               "HttpCode":"200,400,401,405"
+            }
+         }
+      },
+      "WebServerGroup":{
+         "Type":"AWS::AutoScaling::AutoScalingGroup",
+         "Properties":{
+            "LaunchConfigurationName":{
+               "Ref":"LaunchConfiguration"
+            },
+            "MinSize":"2",
+            "MaxSize":"5",
+            "TargetGroupARNs":[
+               {
+                  "Ref":"TargetGroup"
+               }
+            ],
             "Tags":[
                {
                   "Key":"Name",
-                  "Value":{
-                     "Ref":"myEC2Name"
-                  }
+                  "Value":"myEC2Server",
+                  "PropagateAtLaunch":"True"
+               }
+            ],
+            "DesiredCapacity":"2",
+            "Cooldown":300,
+            "VPCZoneIdentifier":[
+               {
+                  "Ref":"myPublicSubnet1"
+               },
+               {
+                  "Ref":"myPublicSubnet2"
+               },
+               {
+                  "Ref":"myPublicSubnet3"
                }
             ]
          }
       },
-      "myEC2InstanceProfile":{
+      "WebServerScaleUpPolicy":{
+         "Type":"AWS::AutoScaling::ScalingPolicy",
          "Properties":{
-            "Path":"/",
-            "Roles":[
+            "AdjustmentType":"ChangeInCapacity",
+            "AutoScalingGroupName":{
+               "Ref":"WebServerGroup"
+            },
+            "Cooldown":"300",
+            "ScalingAdjustment":"1"
+         }
+      },
+      "WebServerScaleDownPolicy":{
+         "Type":"AWS::AutoScaling::ScalingPolicy",
+         "Properties":{
+            "AdjustmentType":"ChangeInCapacity",
+            "AutoScalingGroupName":{
+               "Ref":"WebServerGroup"
+            },
+            "Cooldown":"300",
+            "ScalingAdjustment":"-1"
+         }
+      },
+      "CPUAlarmHigh":{
+         "Type":"AWS::CloudWatch::Alarm",
+         "Properties":{
+            "AlarmDescription":"Scale-up if CPU > 10% for 10 minutes",
+            "MetricName":"CPUUtilization",
+            "Namespace":"AWS/EC2",
+            "Statistic":"Average",
+            "Period":"300",
+            "EvaluationPeriods":"2",
+            "Threshold":"10",
+            "AlarmActions":[
                {
-                  "Ref":"CodeDeployEC2ServiceRole"
+                  "Ref":"WebServerScaleUpPolicy"
                }
-            ]
-         },
-         "Type":"AWS::IAM::InstanceProfile"
-      },
-      "WebappApplication":{
-         "Properties":{
-            "ApplicationName":{
-               "Ref":"myAppName"
-            },
-            "ComputePlatform":"Server"
-         },
-         "Type":"AWS::CodeDeploy::Application"
-      },
-      "WebappDeploymentGroup":{
-         "DependsOn":"CodeDeployServiceRole",
-         "Properties":{
-            "ApplicationName":{
-               "Ref":"WebappApplication"
-            },
-            "AutoRollbackConfiguration":{
-               "Enabled":"true",
-               "Events":[
-                  "DEPLOYMENT_FAILURE"
-               ]
-            },
-            "DeploymentConfigName":"CodeDeployDefault.AllAtOnce",
-            "DeploymentGroupName":{
-               "Ref":"myDeployGroupName"
-            },
-            "DeploymentStyle":{
-               "DeploymentOption":"WITHOUT_TRAFFIC_CONTROL",
-               "DeploymentType":"IN_PLACE"
-            },
-            "Ec2TagFilters":[
+            ],
+            "Dimensions":[
                {
-                  "Key":"Name",
-                  "Type":"KEY_AND_VALUE",
+                  "Name":"AutoScalingGroupName",
                   "Value":{
-                     "Ref":"myEC2Name"
+                     "Ref":"WebServerGroup"
                   }
                }
             ],
-            "ServiceRoleArn":{
-               "Fn::GetAtt":[
-                  "CodeDeployServiceRole",
-                  "Arn"
-               ]
-            }
-         },
-         "Type":"AWS::CodeDeploy::DeploymentGroup"
+            "ComparisonOperator":"GreaterThanThreshold"
+         }
+      },
+      "CPUAlarmLow":{
+         "Type":"AWS::CloudWatch::Alarm",
+         "Properties":{
+            "AlarmDescription":"Scale-down if CPU < 5% for 10 minutes",
+            "MetricName":"CPUUtilization",
+            "Namespace":"AWS/EC2",
+            "Statistic":"Average",
+            "Period":"300",
+            "EvaluationPeriods":"2",
+            "Threshold":"5",
+            "AlarmActions":[
+               {
+                  "Ref":"WebServerScaleDownPolicy"
+               }
+            ],
+            "Dimensions":[
+               {
+                  "Name":"AutoScalingGroupName",
+                  "Value":{
+                     "Ref":"WebServerGroup"
+                  }
+               }
+            ],
+            "ComparisonOperator":"LessThanThreshold"
+         }
+      },
+      "DNSRecordSet":{
+         "Type":"AWS::Route53::RecordSet",
+         "Properties":{
+            "Name":{
+               "Ref":"DomainName"
+            },
+            "HostedZoneId":{
+               "Ref":"HostedZoneId"
+            },
+            "AliasTarget":{
+               "HostedZoneId":{
+                  "Fn::GetAtt":[
+                     "myLoadBalancer",
+                     "CanonicalHostedZoneID"
+                  ]
+               },
+               "DNSName":{
+                  "Fn::GetAtt":[
+                     "myLoadBalancer",
+                     "DNSName"
+                  ]
+               }
+            },
+            "Type":"A"
+         }
+      },
+      "myHTTPListener":{
+         "Type":"AWS::ElasticLoadBalancingV2::Listener",
+         "Properties":{
+            "DefaultActions":[
+               {
+                  "Type":"forward",
+                  "TargetGroupArn":{
+                     "Ref":"TargetGroup"
+                  }
+               }
+            ],
+            "LoadBalancerArn":{
+               "Ref":"myLoadBalancer"
+            },
+            "Port":80,
+            "Protocol":"HTTP"
+         }
       }
    },
    "Outputs":{
