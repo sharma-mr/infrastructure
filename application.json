@@ -1027,6 +1027,11 @@
                  "sudo echo export CURRENT_PROFILE >> /etc/profile.d/envvariable.sh",
                  "sudo echo DBCreationType=update >> /etc/profile.d/envvariable.sh \n",
                  "sudo echo export DBCreationType >> /etc/profile.d/envvariable.sh \n",
+                 "sudo echo CURRENT_PROFILE=aws >> /etc/profile.d/envvariable.sh \n",
+                 {
+                   "Fn::Sub": "sudo echo domainName=${appDomainName} >> /etc/profile.d/envvariable.sh \n"
+                 },
+                 "sudo echo export appDomainName >> /etc/profile.d/envvariable.sh \n",
                  {
                    "Fn::Sub": "sudo echo DB_USER=${dbUserName} >> /etc/profile.d/envvariable.sh \n"
                  },
