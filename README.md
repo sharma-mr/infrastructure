@@ -12,7 +12,7 @@ Prerequisites for running the aws cli commands<br />
 You should have AWS Command Line Interface installed and configured for your dev and prod profile<br /> 
 
 
-An example of create stack command:- <br />
+<b>An example of create stack command:- <br /></b>
 aws cloudformation create-stack <br />
 --stack-name demo <br />
 --template-body file://./{fileName}} <br />
@@ -31,12 +31,13 @@ ParameterKey=keyname,ParameterValue={sshKeyName}} <br />
 --region us-east-1 <br />
 --profile prod<br />
 
-Install ssl certificate command:- <br />
+<b>Install ssl certificate command:- <br /></b>
 aws acm import-certificate --certificate fileb://{certificate}.pem<br />
                                  --certificate-chain fileb://{certificateChain}.pem<br />
                                  --private-key fileb://{privatekey}.pem<br />
                                  --profile {profile}<br />
+If you have not configured your region in your aws cli you can configure it using aws configure or you can pass <b>--region {region}</b> in the command<br />
 
 
-Delete stack command:- <br />
+<b>Delete stack command:- <br /></b>
 aws cloudformation delete-stack --stack-name csye6225demo --region us-east-1 --profile dev<br />
