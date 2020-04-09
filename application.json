@@ -1168,6 +1168,9 @@
            "DBInstanceIdentifier":{
               "Ref":"dbIdentifier"
            },
+           "DBParameterGroupName": {
+            "Ref": "ParamGroupForRDS"
+          },
            "MasterUsername":{
               "Ref":"dbUserName"
            },
@@ -1190,6 +1193,16 @@
            "StorageEncrypted":true
         }
      },
+     "ParamGroupForRDS": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Family": "MySQL5.7",
+        "Description": "Database Parameter Group for RDS Instance ",
+        "Parameters": {
+          "performance_schema": "1"
+        }
+      }
+    },
      "EC2InstanceProfile":{
         "Properties":{
            "Path":"/",
