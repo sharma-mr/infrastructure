@@ -13,7 +13,30 @@ You should have AWS Command Line Interface installed and configured for your dev
 
 
 An example of create stack command:- <br />
-aws cloudformation create-stack   --stack-name csye6225  --parameters ParameterKey=VPCName,ParameterValue=VPCName    ParameterKey=myVPCCIDR,ParameterValue=10.0.0.0/16   ParameterKey=mySubnet1CIDR,ParameterValue=10.0.1.0/24   ParameterKey=mySubnet2CIDR,ParameterValue=10.0.2.0/24   ParameterKey=mySubnet3CIDR,ParameterValue=10.0.3.0/24   --template-body file://networking.json --region us-east-2 --profile dev<br />
+aws cloudformation create-stack <br />
+--stack-name demo <br />
+--template-body file://./{fileName}} <br />
+--parameters <br />
+ParameterKey=appDomainName,ParameterValue={domainName}} <br />
+ParameterKey=HostedZoneId,ParameterValue={hostedZoneId} <br />
+ParameterKey=s3BucketForCodeDeploy,ParameterValue={s3bucketForCodeDeploy}} <br />
+ParameterKey=subnetcidrblock,ParameterValue={subnetCidrBlock}} <br />
+ParameterKey=VPCName,ParameterValue={vpcName} <br />
+ParameterKey=AWSRegion,ParameterValue={REGION}} <br />
+ParameterKey=vpccidrblock,ParameterValue={vpcciderblock}} <br />
+ParameterKey=AMI,ParameterValue={ami} <br />
+ParameterKey=certificateArn,ParameterValue={certificateArn}} <br />
+ParameterKey=keyname,ParameterValue={sshKeyName}} <br />
+--capabilities CAPABILITY_NAMED_IAM <br />
+--region us-east-1 <br />
+--profile prod<br />
+
+Install ssl certificate command:- <br />
+aws acm import-certificate --certificate fileb://{certificate}.pem<br />
+                                 --certificate-chain fileb://{certificateChain}.pem<br />
+                                 --private-key fileb://{privatekey}.pem<br />
+                                 --profile {profile}<br />
+
 
 Delete stack command:- <br />
 aws cloudformation delete-stack --stack-name csye6225demo --region us-east-1 --profile dev<br />
